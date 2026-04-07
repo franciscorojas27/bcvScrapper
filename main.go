@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"github.com/rs/cors"
 )
 
 type Person struct {
@@ -25,7 +26,8 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	http.HandleFunc("/people", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/people", func(w http.ResponseWriter, r *http.Request) {
 		people := []Person{
 			{Name: "Person 1", Age: 19, Id: 1},
 			{Name: "Person 2", Age: 20, Id: 2},
@@ -152,7 +154,7 @@ func main() {
 		json.NewEncoder(w).Encode(people)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 		rates := scrapeBCV()
 		tmpl := `
@@ -187,9 +189,14 @@ func main() {
 		data := PageData{Rates: rates}
 		t.Execute(w, data)
 	})
-
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, 
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type"},
+		AllowCredentials: true,
+	}).Handler(mux)
 	fmt.Println("Servidor corriendo en http://localhost:8080")
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+port, handler)
 }
 func scrapeBCV() map[string]string {
 	rates := make(map[string]string)
