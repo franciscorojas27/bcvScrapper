@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gocolly/colly"
+	"github.com/rs/cors"
 	"html/template"
 	"net/http"
 	"os"
 	"strings"
-	"github.com/rs/cors"
 )
 
 type Person struct {
@@ -190,7 +190,7 @@ func main() {
 		t.Execute(w, data)
 	})
 	handler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, 
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
@@ -200,9 +200,9 @@ func main() {
 }
 func scrapeBCV() map[string]string {
 	rates := make(map[string]string)
+	rates["DEBUG"] = "Debug"
 	c := colly.NewCollector()
-	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"
-
+	c.UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1"
 	c.OnHTML("#euro, #yuan, #lira, #rublo, #dolar", func(e *colly.HTMLElement) {
 		idCoin := e.Attr("id")
 		price := strings.TrimSpace(e.ChildText(".centrado strong"))
