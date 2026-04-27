@@ -1,86 +1,94 @@
 package main
 
 import (
-	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	"html/template"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/gocolly/colly"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
 )
 
-type PageData struct {
-	Rates map[string]string
+type App struct {
+	DB *pgxpool.Pool
 }
 
-func main() {
-	port := os.Getenv("PORT")
+var (
+	conString      = os.Getenv("DB_STRING")
+	port           = os.Getenv("PORT")
+	tokenTelegram  = os.Getenv("TELEGRAM_TOKEN")
+	chatIDTelegram = os.Getenv("TELEGRAM_CHAT_ID")
+	FinalData      CurrencyRatesData
+	logger         = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+)
+
+func init() {
+	if conString == "" {
+		logger.Warn("the environment variable DB_STRING is not set.")
+		panic(0)
+	}
 	if port == "" {
 		port = "8080"
 	}
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		rates := scrapeBCV()
-		tmpl := `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Tasas BCV</title>
-			<style>
-				body { font-family: sans-serif; display: flex; justify-content: center; background: #f4f4f9; }
-				table { border-collapse: collapse; width: 300px; background: white; margin-top: 50px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-				th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-				th { background-color: #004a99; color: white; }
-				tr:nth-child(even) { background-color: #f2f2f2; }
-			</style>
-		</head>
-		<body>
-			<table>
-				<tr><th>Moneda</th><th>Precio (Bs.)</th></tr>
-				{{range $coin, $price := .Rates}}
-				<tr>
-					<td><strong>{{$coin | printf "%s" | u}}</strong></td>
-					<td>{{$price}}</td>
-				</tr>
-				{{end}}
-			</table>
-		</body>
-		</html>`
-
-		funcMap := template.FuncMap{"u": strings.ToUpper}
-		t, _ := template.New("webpage").Funcs(funcMap).Parse(tmpl)
-
-		data := PageData{Rates: rates}
-		t.Execute(w, data)
-	})
-	handler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type"},
-		AllowCredentials: true,
-	}).Handler(mux)
-	fmt.Println("Servidor corriendo en http://localhost:8080")
-	http.ListenAndServe(":"+port, handler)
+	if tokenTelegram == "" || chatIDTelegram == "" {
+		logger.Warn("the environment variables TELEGRAM_TOKEN o TELEGRAM_CHAT_ID not set.")
+		panic(0)
+	}
 }
-func scrapeBCV() map[string]string {
-	rates := make(map[string]string)
-	rates["DEBUG"] = "Debug"
-	c := colly.NewCollector()
-	c.WithTransport(&http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    })
-	c.UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1"
-	c.OnHTML("#euro, #yuan, #lira, #rublo, #dolar", func(e *colly.HTMLElement) {
-		idCoin := e.Attr("id")
-		price := strings.TrimSpace(e.ChildText(".centrado strong"))
-		rates[idCoin] = price
+
+func main() {
+	FinalData = scrapeBCV()
+
+	pool, err := connectDB(conString)
+	if err != nil {
+		logger.Error("Error al conectar a la base de datos", "error", err)
+		return
+	}
+	if err = initializeDB(pool); err != nil {
+		logger.Error("Error al inicializar la base de datos", "error", err)
+		return
+	}
+
+	defer pool.Close()
+
+	app := &App{DB: pool}
+
+	FinalData.InsertRates(app)
+	authTelegram := AuthTelegram{
+		Token:  tokenTelegram,
+		ChatID: chatIDTelegram,
+	}
+	var sb strings.Builder
+
+	fmt.Fprintf(&sb, "📅 Fecha: %s\n", FinalData.Date)
+
+	for _, rate := range FinalData.List {
+		fmt.Fprintf(&sb, "✅ %s: %f\n", rate.Symbol, rate.Price)
+	}
+
+	message := sb.String()
+	if err := sendMessage(authTelegram, message); err != nil {
+		logger.Error("Error sending message to telegram", "error", err)
+	} else {
+		logger.Info("Message sent to Telegram successfully")
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/rates", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if date, err := time.Parse(time.RFC3339, FinalData.Date); err == nil {
+			FinalData.Date = date.UTC().String()
+		} else {
+			logger.Error("Error al formatear la fecha para la respuesta HTTP", "error", err)
+		}
+		json.NewEncoder(w).Encode(FinalData)
 	})
 
-	c.Visit("https://www.bcv.org.ve/")
-	return rates
+	handler := cors.Default().Handler(mux)
+	fmt.Printf("Servidor en http://localhost:%s\n", port)
+	http.ListenAndServe(":"+port, handler)
 }
