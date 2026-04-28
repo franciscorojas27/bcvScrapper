@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
@@ -42,53 +40,49 @@ func init() {
 
 func main() {
 	FinalData = scrapeBCV()
-
 	pool, err := connectDB(conString)
 	if err != nil {
-		logger.Error("Error al conectar a la base de datos", "error", err)
+		logger.Error("Error to connect to database", "error", err)
 		return
 	}
 	if err = initializeDB(pool); err != nil {
-		logger.Error("Error al inicializar la base de datos", "error", err)
+		logger.Error("Error to initialize the database", "error", err)
+		return
+	}
+	if err = SaveScrapeReport(pool, FinalData); err != nil {
+		logger.Error("Error to save scrape report", "error", err)
 		return
 	}
 
 	defer pool.Close()
 
-	app := &App{DB: pool}
+	// app := &App{DB: pool}
 
-	FinalData.InsertRates(app)
-	authTelegram := AuthTelegram{
-		Token:  tokenTelegram,
-		ChatID: chatIDTelegram,
-	}
-	var sb strings.Builder
+	// authTelegram := AuthTelegram{
+	// 	Token:  tokenTelegram,
+	// 	ChatID: chatIDTelegram,
+	// }
 
-	fmt.Fprintf(&sb, "📅 Fecha: %s\n", FinalData.Date)
+	// message := BuildMessage(FinalData)
 
-	for _, rate := range FinalData.List {
-		fmt.Fprintf(&sb, "✅ %s: %f\n", rate.Symbol, rate.Price)
-	}
-
-	message := sb.String()
-	if err := sendMessage(authTelegram, message); err != nil {
-		logger.Error("Error sending message to telegram", "error", err)
-	} else {
-		logger.Info("Message sent to Telegram successfully")
-	}
+	// if err := sendMessage(authTelegram, message); err != nil {
+	// 	logger.Error("Error sending message to telegram", "error", err)
+	// } else {
+	// 	logger.Info("Message sent to Telegram successfully")
+	// }
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/rates", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if date, err := time.Parse(time.RFC3339, FinalData.Date); err == nil {
-			FinalData.Date = date.UTC().String()
-		} else {
-			logger.Error("Error al formatear la fecha para la respuesta HTTP", "error", err)
+		date, err := GetLatestRates(pool)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error fetching latest rates: %v", err), http.StatusInternalServerError)
+			return
 		}
-		json.NewEncoder(w).Encode(FinalData)
+		json.NewEncoder(w).Encode(date)
 	})
 
 	handler := cors.Default().Handler(mux)
-	fmt.Printf("Servidor en http://localhost:%s\n", port)
+	fmt.Printf("Server http://localhost:%s\n", port)
 	http.ListenAndServe(":"+port, handler)
 }

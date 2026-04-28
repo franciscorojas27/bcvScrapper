@@ -4,17 +4,17 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gocolly/colly"
+	"github.com/shopspring/decimal"
 )
 
 func scrapeBCV() CurrencyRatesData {
 	FinalDataRaw := CurrencyRatesData{
 		List: []CurrencyRate{},
-		Date: "",
+		Date: time.Time{},
 	}
 
 	c := colly.NewCollector()
@@ -36,7 +36,7 @@ func scrapeBCV() CurrencyRatesData {
 		if err != nil {
 			fmt.Printf("❌ Error al parsear la fecha: %v\n", err)
 		} else {
-			FinalDataRaw.Date = t.UTC().Format(time.RFC3339)
+			FinalDataRaw.Date = t.UTC()
 		}
 	})
 	c.OnHTML("#euro, #yuan, #lira, #rublo, #dolar", func(e *colly.HTMLElement) {
@@ -51,7 +51,7 @@ func scrapeBCV() CurrencyRatesData {
 		priceNormalized = strings.ReplaceAll(priceNormalized, " ", "")
 		priceNormalized = strings.ReplaceAll(priceNormalized, "\u00A0", "")
 
-		priceFloat, err := strconv.ParseFloat(priceNormalized, 64)
+		priceFloat, err := decimal.NewFromString(priceNormalized)
 
 		if err != nil {
 			fmt.Printf("❌ Error al convertir el precio a float: %v (raw=%q normalized=%q)\n", err, price, priceNormalized)
@@ -61,7 +61,7 @@ func scrapeBCV() CurrencyRatesData {
 			FinalDataRaw.List = append(FinalDataRaw.List, CurrencyRate{
 				Symbol:    name,
 				Price:     priceFloat,
-				ChangePct: 0,
+				ChangePct: decimal.Zero,
 			})
 		}
 	})

@@ -1,1 +1,4 @@
 BcvScraper
+docker/docker-compose.yml
+.env
+__debug_bin.exe

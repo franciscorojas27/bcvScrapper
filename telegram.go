@@ -20,18 +20,36 @@ func sendMessage(auth AuthTelegram, message string) error {
 	}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("error al crear el payload: %v", err)
+		return fmt.Errorf("error creating payload: %v", err)
 	}
 
 	resp, err := http.Post(url, "application/json", strings.NewReader(string(jsonPayload)))
 	if err != nil {
-		return fmt.Errorf("error al enviar el mensaje: %v", err)
+		return fmt.Errorf("error sending message: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("error en la respuesta de Telegram: %s", resp.Status)
+		return fmt.Errorf("Telegram response error: %s", resp.Status)
 	}
 
 	return nil
+}
+
+func BuildMessage(data CurrencyRatesData) string {
+	var sb strings.Builder
+	sb.Grow(30 + (len(data.List) * 40))
+
+	sb.WriteString("📅 Date: ")
+	sb.WriteString(data.Date.String())
+	sb.WriteByte('\n')
+
+	for _, rate := range data.List {
+		sb.WriteString("✅ ")
+		sb.WriteString(rate.Symbol)
+		sb.WriteString(": ")
+		sb.WriteString(rate.Price.StringFixed(2))
+		sb.WriteByte('\n')
+	}
+	return sb.String()
 }
