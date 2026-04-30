@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: locatel_db
+    restart: always
+    environment:
+      POSTGRES_USER: locatel
+      POSTGRES_PASSWORD: clavesupersecreta
+      POSTGRES_DB: locatel
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
