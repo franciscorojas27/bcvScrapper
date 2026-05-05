@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bcv/models"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -11,10 +12,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func scrapeBCV() CurrencyRatesData {
-	FinalDataRaw := CurrencyRatesData{
-		List: []CurrencyRate{},
-		Date: time.Time{},
+func scrapeBCV() models.ScrapeReport {
+	FinalDataRaw := models.ScrapeReport{
+		Rates:   []models.CurrencyRate{},
+		BcvDate: time.Time{},
 	}
 
 	c := colly.NewCollector()
@@ -36,7 +37,7 @@ func scrapeBCV() CurrencyRatesData {
 		if err != nil {
 			fmt.Printf("❌ Error al parsear la fecha: %v\n", err)
 		} else {
-			FinalDataRaw.Date = t.UTC()
+			FinalDataRaw.BcvDate = t.UTC()
 		}
 	})
 	c.OnHTML("#euro, #yuan, #lira, #rublo, #dolar", func(e *colly.HTMLElement) {
@@ -58,7 +59,7 @@ func scrapeBCV() CurrencyRatesData {
 			return
 		}
 		if name != "" && price != "" {
-			FinalDataRaw.List = append(FinalDataRaw.List, CurrencyRate{
+			FinalDataRaw.Rates = append(FinalDataRaw.Rates, models.CurrencyRate{
 				Symbol:    name,
 				Price:     priceFloat,
 				ChangePct: decimal.Zero,

@@ -1,0 +1,6 @@
+{"time":"2026-05-03T16:27:17.3378056-04:00","level":"INFO","msg":"Message sent to Telegram successfully"}
+{"time":"2026-05-03T16:27:17.3385079-04:00","level":"INFO","msg":"Starting server","port":"8080"}
+{"time":"2026-05-03T16:41:35.2208287-04:00","level":"INFO","msg":"Initial scrape completed successfully"}
+{"time":"2026-05-03T16:41:35.2216422-04:00","level":"INFO","msg":"Starting server","port":"8080"}
+{"time":"2026-05-03T16:42:08.3083507-04:00","level":"INFO","msg":"Initial scrape completed successfully"}
+{"time":"2026-05-03T16:42:08.3083507-04:00","level":"INFO","msg":"Starting server","port":"8080"}

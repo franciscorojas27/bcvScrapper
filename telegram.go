@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bcv/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -36,15 +37,15 @@ func sendMessage(auth AuthTelegram, message string) error {
 	return nil
 }
 
-func BuildMessage(data CurrencyRatesData) string {
+func BuildMessage(data models.ScrapeReport) string {
 	var sb strings.Builder
-	sb.Grow(30 + (len(data.List) * 40))
+	sb.Grow(30 + (len(data.Rates) * 40))
 
 	sb.WriteString("📅 Date: ")
-	sb.WriteString(data.Date.String())
+	sb.WriteString(data.BcvDate.Local().String())
 	sb.WriteByte('\n')
 
-	for _, rate := range data.List {
+	for _, rate := range data.Rates {
 		sb.WriteString("✅ ")
 		sb.WriteString(rate.Symbol)
 		sb.WriteString(": ")

@@ -6,11 +6,13 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
 type App struct {
-	DB *pgxpool.Pool
+	DB   *gorm.DB
+	Auth AuthTelegram
 }
 
 var (
@@ -18,69 +20,92 @@ var (
 	port           = os.Getenv("PORT")
 	tokenTelegram  = os.Getenv("TELEGRAM_TOKEN")
 	chatIDTelegram = os.Getenv("TELEGRAM_CHAT_ID")
-	FinalData      CurrencyRatesData
-	logger         = slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	app            *App
 )
 
-func init() {
+func Setup() {
+	f, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("Error opening log file: %v\n", err)
+		os.Exit(1)
+	}
+	logger := slog.New(slog.NewJSONHandler(f, nil))
+	slog.SetDefault(logger)
+}
+func Load() {
 	if conString == "" {
-		logger.Warn("the environment variable DB_STRING is not set.")
-		panic(0)
+		slog.Warn("the environment variable DB_STRING is not set.")
+		os.Exit(1)
 	}
 	if port == "" {
 		port = "8080"
 	}
 	if tokenTelegram == "" || chatIDTelegram == "" {
-		logger.Warn("the environment variables TELEGRAM_TOKEN o TELEGRAM_CHAT_ID not set.")
-		panic(0)
+		slog.Warn("the environment variables TELEGRAM_TOKEN o TELEGRAM_CHAT_ID not set.")
+		os.Exit(1)
 	}
+}
+func ScrapeLatestRates(app *App) error {
+	data := scrapeBCV()
+	if err := SaveScrapeReport(app.DB, data); err != nil {
+		return fmt.Errorf("Error to save scrape report: %w", err)
+	}
+	message := BuildMessage(data)
 
-	pool, err := connectDB(conString)
-	if err != nil {
-		logger.Error("Error to connect to database", "error", err)
-		return
+	if err := sendMessage(app.Auth, message); err != nil {
+		return fmt.Errorf("Error sending message to telegram: %w ", err)
 	}
-	defer pool.Close()
-
-	if err = initializeDB(pool); err != nil {
-		logger.Error("Error to initialize the database", "error", err)
-		return
-	}
-	app = &App{DB: pool}
+	return nil
 }
 
 func main() {
-	FinalData = scrapeBCV()
-	if err := SaveScrapeReport(app.DB, FinalData); err != nil {
-		logger.Error("Error to save scrape report", "error", err)
+	Setup()
+	Load()
+	db, err := ConnectDB(conString)
+	if err != nil {
+		slog.Error("Error to connect to database", "error", err)
 		return
 	}
 
-	// authTelegram := AuthTelegram{
-	// 	Token:  tokenTelegram,
-	// 	ChatID: chatIDTelegram,
-	// }
+	if err = InitializeDB(db); err != nil {
+		slog.Error("Error to initialize the database", "error", err)
+		return
+	}
+	app := &App{DB: db, Auth: AuthTelegram{
+		Token:  tokenTelegram,
+		ChatID: chatIDTelegram,
+	}}
 
-	// message := BuildMessage(FinalData)
+	c := cron.New()
 
-	// if err := sendMessage(authTelegram, message); err != nil {
-	// 	logger.Error("Error sending message to telegram", "error", err)
-	// } else {
-	// 	logger.Info("Message sent to Telegram successfully")
-	// }
+	c.AddFunc("@daily", func() {
+		slog.Info("Starting scheduled scrape")
+		if err := ScrapeLatestRates(app); err != nil {
+			slog.Error("Error during scheduled scrape", "error", err)
+		} else {
+			slog.Info("Scheduled scrape completed successfully")
+		}
+	})
+	c.Start()
+
+	err = ScrapeLatestRates(app)
+
+	if err != nil {
+		slog.Error("Error during initial scrape", "error", err)
+	} else {
+		slog.Info("Initial scrape completed successfully")
+	}
 
 	server := fiber.New()
 
 	server.Get("/rates", func(c fiber.Ctx) error {
 		date, err := GetLatestRates(app.DB)
-		logger.Info("Request: /rates", "ip:", c.IP())
+		slog.Info("Request: /rates", "ip:", c.IP())
 		if err != nil {
-			logger.Error("Error fetching latest rates", "error", err)
+			slog.Error("Error fetching latest rates", "error", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching latest rates: %v", err)})
 		}
 		return c.JSON(date)
 	})
-	logger.Info("Starting server", "port", port)
+	slog.Info("Starting server", "port", port)
 	server.Listen(":" + port)
 }
