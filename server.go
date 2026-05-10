@@ -27,6 +27,11 @@ func StartServer(app *App) {
 		},
 	}))
 
+	server.Get("/health", func(c fiber.Ctx) error {
+		slog.Info("Request: /health", "ip:", c.IP())
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
 	server.Get("/binance", func(c fiber.Ctx) error {
 		var sellPrice, buyPrice decimal.Decimal
 		g, _ := errgroup.WithContext(c.Context())
