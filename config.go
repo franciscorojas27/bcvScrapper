@@ -8,12 +8,7 @@ import (
 )
 
 func Setup() {
-	f, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("Error opening log file: %v\n", err)
-		os.Exit(1)
-	}
-	logger := slog.New(slog.NewJSONHandler(f, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 }
 func Load() {
