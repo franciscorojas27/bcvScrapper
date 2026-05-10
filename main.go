@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
@@ -13,6 +11,7 @@ import (
 type App struct {
 	DB   *gorm.DB
 	Auth AuthTelegram
+	Port string
 }
 
 var (
@@ -21,41 +20,6 @@ var (
 	tokenTelegram  = os.Getenv("TELEGRAM_TOKEN")
 	chatIDTelegram = os.Getenv("TELEGRAM_CHAT_ID")
 )
-
-func Setup() {
-	f, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("Error opening log file: %v\n", err)
-		os.Exit(1)
-	}
-	logger := slog.New(slog.NewJSONHandler(f, nil))
-	slog.SetDefault(logger)
-}
-func Load() {
-	if conString == "" {
-		slog.Warn("the environment variable DB_STRING is not set.")
-		os.Exit(1)
-	}
-	if port == "" {
-		port = "8080"
-	}
-	if tokenTelegram == "" || chatIDTelegram == "" {
-		slog.Warn("the environment variables TELEGRAM_TOKEN o TELEGRAM_CHAT_ID not set.")
-		os.Exit(1)
-	}
-}
-func ScrapeLatestRates(app *App) error {
-	data := scrapeBCV()
-	if err := SaveScrapeReport(app.DB, data); err != nil {
-		return fmt.Errorf("Error to save scrape report: %w", err)
-	}
-	message := BuildMessage(data)
-
-	if err := sendMessage(app.Auth, message); err != nil {
-		return fmt.Errorf("Error sending message to telegram: %w ", err)
-	}
-	return nil
-}
 
 func main() {
 	Setup()
@@ -73,7 +37,9 @@ func main() {
 	app := &App{DB: db, Auth: AuthTelegram{
 		Token:  tokenTelegram,
 		ChatID: chatIDTelegram,
-	}}
+	},
+		Port: port,
+	}
 
 	c := cron.New()
 
@@ -95,17 +61,5 @@ func main() {
 		slog.Info("Initial scrape completed successfully")
 	}
 
-	server := fiber.New()
-
-	server.Get("/rates", func(c fiber.Ctx) error {
-		date, err := GetLatestRates(app.DB)
-		slog.Info("Request: /rates", "ip:", c.IP())
-		if err != nil {
-			slog.Error("Error fetching latest rates", "error", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching latest rates: %v", err)})
-		}
-		return c.JSON(date)
-	})
-	slog.Info("Starting server", "port", port)
-	server.Listen(":" + port)
+	StartServer(app)
 }

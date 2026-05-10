@@ -74,3 +74,16 @@ func scrapeBCV() models.ScrapeReport {
 	c.Visit("https://www.bcv.org.ve/")
 	return FinalDataRaw
 }
+
+func ScrapeLatestRates(app *App) error {
+	data := scrapeBCV()
+	if err := SaveScrapeReport(app.DB, data); err != nil {
+		return fmt.Errorf("Error to save scrape report: %w", err)
+	}
+	message := BuildMessage(data)
+
+	if err := sendMessage(app.Auth, message); err != nil {
+		return fmt.Errorf("Error sending message to telegram: %w ", err)
+	}
+	return nil
+}
