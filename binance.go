@@ -27,16 +27,20 @@ type P2PRequest struct {
 	Periods                   []any    `json:"periods"`
 	AdditionalKycVerifyFilter int      `json:"additionalKycVerifyFilter"`
 	PublisherType             any      `json:"publisherType"`
-	PayTypes                  []any    `json:"payTypes"`
+	PayTypes                  []string `json:"payTypes"`
 	Classifies                []string `json:"classifies"`
 	TradedWith                bool     `json:"tradedWith"`
 	Followed                  bool     `json:"followed"`
 	TransAmount               int      `json:"transAmount"`
 }
 
-func GetBinanceRates(tradeType string, amount int) (decimal.Decimal, error) {
+func GetBinanceRates(tradeType string, amount int, payTypes ...string) (decimal.Decimal, error) {
 	url := "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 	price := decimal.NewFromFloat(0)
+
+	if payTypes == nil {
+		payTypes = []string{}
+	}
 
 	requestBody := P2PRequest{
 		Fiat:                      "VES",
@@ -47,6 +51,7 @@ func GetBinanceRates(tradeType string, amount int) (decimal.Decimal, error) {
 		Countries:                 []any{},
 		ProMerchantAds:            false,
 		ShieldMerchantAds:         false,
+		PayTypes:                  payTypes,
 		FilterType:                "CLASSIC",
 		Periods:                   []any{},
 		AdditionalKycVerifyFilter: 0,

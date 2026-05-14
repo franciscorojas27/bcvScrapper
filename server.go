@@ -44,7 +44,7 @@ func StartServer(app *App) {
 
 		g.Go(func() error {
 			var err error
-			buyPrice, err = GetBinanceRates("SELL", 50000)
+			buyPrice, err = GetBinanceRates("SELL", 50000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
 			return err
 		})
 
