@@ -7,10 +7,16 @@ import (
 )
 
 func ClientIA() (*openai.LLM, error) {
+	if os.Getenv("GROQ_API_KEY") == "" {
+		return nil, nil
+	}
+	if os.Getenv("GROQ_MODEL") == "" {
+		return nil, nil
+	}
 	llm, err := openai.New(
 		openai.WithBaseURL("https://api.groq.com/openai/v1"),
 		openai.WithToken(os.Getenv("GROQ_API_KEY")),
-		openai.WithModel("allam-2-7b"),
+		openai.WithModel(os.Getenv("GROQ_MODEL")),
 	)
 	if err != nil {
 		return nil, err

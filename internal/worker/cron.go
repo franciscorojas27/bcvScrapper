@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bcv/internal/modules/groq"
 	"bcv/internal/platform/scraper"
 	"bcv/internal/platform/server"
 	"log/slog"
@@ -20,5 +21,17 @@ func StartCron(app *server.App) {
 		}
 	})
 
-	c.Run()
+	runScrape := func() {
+		slog.Info("Starting scheduled trade signal generation")
+		if err := groq.GetTradeSignal(app); err != nil {
+			slog.Error("Error during scheduled trade signal generation", "error", err)
+		} else {
+			slog.Info("Scheduled trade signal generation completed successfully")
+		}
+	}
+
+	c.AddFunc("0 9 * * *", runScrape)
+	c.AddFunc("0 16 * * *", runScrape)
+
+	c.Start()
 }

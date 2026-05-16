@@ -1,8 +1,8 @@
 package server
 
 import (
+	"bcv/internal/modules/trade"
 	"bcv/internal/platform/database"
-	"bcv/internal/platform/providers/binance"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,8 +10,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cache"
 	"github.com/gofiber/fiber/v3/middleware/compress"
-	"github.com/shopspring/decimal"
-	"golang.org/x/sync/errgroup"
 )
 
 func StartServer(app *App) {
@@ -35,29 +33,10 @@ func StartServer(app *App) {
 	})
 
 	server.Get("/binance", func(c fiber.Ctx) error {
-		var sellPrice, buyPrice decimal.Decimal
-		g, _ := errgroup.WithContext(c.Context())
-
-		g.Go(func() error {
-			var err error
-			buyPrice, err = binance.GetBinanceRates("BUY", 50000)
-			return err
-		})
-
-		g.Go(func() error {
-			var err error
-			sellPrice, err = binance.GetBinanceRates("SELL", 50000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
-			return err
-		})
-
-		if err := g.Wait(); err != nil {
+		rates, err := trade.FetchBinanceRates()
+		if err != nil {
 			slog.Error("Error fetching Binance rates", "error", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching Binance rates: %v", err)})
-		}
-
-		rates := map[string]decimal.Decimal{
-			"sellPrice": sellPrice,
-			"buyPrice":  buyPrice,
 		}
 
 		slog.Info("Request: /binance", "ip:", c.IP())
@@ -72,6 +51,16 @@ func StartServer(app *App) {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching latest rates: %v", err)})
 		}
 		return c.JSON(date)
+	})
+
+	server.Get("/trade-signal", func(c fiber.Ctx) error {
+		tradeSignal, err := database.GetLatestTradeSignal(app.DB)
+		if err != nil {
+			slog.Error("Error fetching latest trade signal", "error", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching latest trade signal: %v", err)})
+		}
+		slog.Info("Request: /trade-signal", "ip:", c.IP())
+		return c.JSON(tradeSignal)
 	})
 
 	slog.Info("Starting server", "port", app.Port)

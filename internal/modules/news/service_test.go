@@ -1,4 +1,4 @@
-package pricebank
+package news
 
 import (
 	"fmt"
@@ -11,16 +11,21 @@ import (
 func TestFetchNewsTitlesAggregatesResults(t *testing.T) {
 	originalGetNews := getNews
 	originalFetchNews := fetchNews
+	originalFetchRSSNews := fetchRSSNews
 	originalEndpoints := newsEndpoints
 
 	defer func() {
 		getNews = originalGetNews
 		fetchNews = originalFetchNews
+		fetchRSSNews = originalFetchRSSNews
 		newsEndpoints = originalEndpoints
 	}()
 
 	getNews = func() ([]string, error) {
 		return []string{"base"}, nil
+	}
+	fetchRSSNews = func(url string) ([]string, error) {
+		return []string{"rss"}, nil
 	}
 	newsEndpoints = []string{"one", "two"}
 	fetchNews = func(endpoint string) ([]string, error) {
@@ -36,22 +41,27 @@ func TestFetchNewsTitlesAggregatesResults(t *testing.T) {
 
 	got, err := FetchNewsTitles()
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"base", "a", "b", "c"}, got)
+	assert.ElementsMatch(t, []string{"base", "rss", "a", "b", "c"}, got)
 }
 
 func TestFetchNewsTitlesReturnsErrorWhenNoTitlesArrive(t *testing.T) {
 	originalGetNews := getNews
 	originalFetchNews := fetchNews
+	originalFetchRSSNews := fetchRSSNews
 	originalEndpoints := newsEndpoints
 
 	defer func() {
 		getNews = originalGetNews
 		fetchNews = originalFetchNews
+		fetchRSSNews = originalFetchRSSNews
 		newsEndpoints = originalEndpoints
 	}()
 
 	getNews = func() ([]string, error) {
 		return nil, nil
+	}
+	fetchRSSNews = func(url string) ([]string, error) {
+		return nil, fmt.Errorf("failed rss")
 	}
 	newsEndpoints = []string{"one", "two"}
 	fetchNews = func(endpoint string) ([]string, error) {

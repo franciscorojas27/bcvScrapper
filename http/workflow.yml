@@ -1,0 +1,12 @@
+config:
+  base_url: http://localhost:8080
+  timeout: 30
+
+requests:
+  - name: get-trade-signal
+    method: GET
+    url: /trade-signal
+
+  - name: get-trade
+    method: GET
+    url: /binance

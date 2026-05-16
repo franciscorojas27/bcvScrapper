@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bcv/config"
+	"bcv/internal/config"
 	"bcv/internal/domain"
-	pricebank "bcv/internal/modules/price_bank"
+	"bcv/internal/modules/groq"
 	"bcv/internal/platform/database"
+	"bcv/internal/platform/providers/ia"
 	"bcv/internal/platform/scraper"
 	"bcv/internal/platform/server"
 	"bcv/internal/worker"
@@ -14,13 +15,6 @@ import (
 func main() {
 	config.Setup()
 	port, conString, tokenTelegram, chatIDTelegram := config.Load()
-
-	data, err := pricebank.FetchNewsTitles()
-	if err != nil {
-		slog.Error("Error fetching news titles", "error", err)
-	} else {
-		slog.Info("Fetched news titles successfully", "count", data)
-	}
 
 	db, err := database.ConnectDB(conString)
 	if err != nil {
@@ -32,10 +26,23 @@ func main() {
 		slog.Error("Error to initialize the database", "error", err)
 		return
 	}
+
+	initIa, err := ia.ClientIA()
+	if err != nil {
+		slog.Error("Error initializing IA client", "error", err)
+	}
+
 	app := server.NewApp(db, domain.AuthTelegram{
 		Token:  tokenTelegram,
 		ChatID: chatIDTelegram,
-	}, port)
+	}, port, initIa)
+
+	err = groq.GetTradeSignal(app)
+	if err != nil {
+		slog.Error("Error getting trade signal", "error", err)
+	} else {
+		slog.Info("Trade signal generated and saved successfully")
+	}
 
 	err = scraper.ScrapeLatestRates(app)
 
@@ -45,7 +52,7 @@ func main() {
 		slog.Info("Initial scrape completed successfully")
 	}
 
-	go worker.StartCron(app)
+	worker.StartCron(app)
 
 	server.StartServer(app)
 }
