@@ -1,6 +1,8 @@
-package main
+package server
 
 import (
+	"bcv/internal/platform/database"
+	"bcv/internal/platform/providers/binance"
 	"fmt"
 	"log/slog"
 	"time"
@@ -38,13 +40,13 @@ func StartServer(app *App) {
 
 		g.Go(func() error {
 			var err error
-			buyPrice, err = GetBinanceRates("BUY", 50000)
+			buyPrice, err = binance.GetBinanceRates("BUY", 50000)
 			return err
 		})
 
 		g.Go(func() error {
 			var err error
-			sellPrice, err = GetBinanceRates("SELL", 50000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
+			sellPrice, err = binance.GetBinanceRates("SELL", 50000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
 			return err
 		})
 
@@ -63,7 +65,7 @@ func StartServer(app *App) {
 	})
 
 	server.Get("/rates", func(c fiber.Ctx) error {
-		date, err := GetLatestRates(app.DB)
+		date, err := database.GetLatestRates(app.DB)
 		slog.Info("Request: /rates", "ip:", c.IP())
 		if err != nil {
 			slog.Error("Error fetching latest rates", "error", err)

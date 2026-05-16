@@ -1,59 +1,35 @@
 package main
 
 import (
+	"bcv/config"
+	"bcv/internal/domain"
+	"bcv/internal/platform/database"
+	"bcv/internal/platform/scraper"
+	"bcv/internal/platform/server"
+	"bcv/internal/worker"
 	"log/slog"
-	"os"
-
-	"github.com/robfig/cron/v3"
-	"gorm.io/gorm"
-)
-
-type App struct {
-	DB   *gorm.DB
-	Auth AuthTelegram
-	Port string
-}
-
-var (
-	conString      = os.Getenv("DB_STRING")
-	port           = os.Getenv("PORT")
-	tokenTelegram  = os.Getenv("TELEGRAM_TOKEN")
-	chatIDTelegram = os.Getenv("TELEGRAM_CHAT_ID")
 )
 
 func main() {
-	Setup()
-	Load()
-	db, err := ConnectDB(conString)
+	config.Setup()
+	port, conString, tokenTelegram, chatIDTelegram := config.Load()
+
+	db, err := database.ConnectDB(conString)
 	if err != nil {
 		slog.Error("Error to connect to database", "error", err)
 		return
 	}
 
-	if err = InitializeDB(db); err != nil {
+	if err = database.InitializeDB(db); err != nil {
 		slog.Error("Error to initialize the database", "error", err)
 		return
 	}
-	app := &App{DB: db, Auth: AuthTelegram{
+	app := server.NewApp(db, domain.AuthTelegram{
 		Token:  tokenTelegram,
 		ChatID: chatIDTelegram,
-	},
-		Port: port,
-	}
+	}, port)
 
-	c := cron.New()
-
-	c.AddFunc("@daily", func() {
-		slog.Info("Starting scheduled scrape")
-		if err := ScrapeLatestRates(app); err != nil {
-			slog.Error("Error during scheduled scrape", "error", err)
-		} else {
-			slog.Info("Scheduled scrape completed successfully")
-		}
-	})
-	c.Start()
-
-	err = ScrapeLatestRates(app)
+	err = scraper.ScrapeLatestRates(app)
 
 	if err != nil {
 		slog.Error("Error during initial scrape", "error", err)
@@ -61,5 +37,7 @@ func main() {
 		slog.Info("Initial scrape completed successfully")
 	}
 
-	StartServer(app)
+	go worker.StartCron(app)
+
+	server.StartServer(app)
 }

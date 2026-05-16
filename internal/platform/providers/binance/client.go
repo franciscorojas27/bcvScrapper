@@ -1,6 +1,7 @@
-package main
+package binance
 
 import (
+	"bcv/internal/domain"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -8,31 +9,6 @@ import (
 
 	"github.com/shopspring/decimal"
 )
-
-type BinanceRate struct {
-	SellPrice float64 `json:"sellPrice"`
-	BuyPrice  float64 `json:"buyPrice"`
-}
-
-type P2PRequest struct {
-	Fiat                      string   `json:"fiat"`
-	Page                      int      `json:"page"`
-	Rows                      int      `json:"rows"`
-	TradeType                 string   `json:"tradeType"`
-	Asset                     string   `json:"asset"`
-	Countries                 []any    `json:"countries"`
-	ProMerchantAds            bool     `json:"proMerchantAds"`
-	ShieldMerchantAds         bool     `json:"shieldMerchantAds"`
-	FilterType                string   `json:"filterType"`
-	Periods                   []any    `json:"periods"`
-	AdditionalKycVerifyFilter int      `json:"additionalKycVerifyFilter"`
-	PublisherType             any      `json:"publisherType"`
-	PayTypes                  []string `json:"payTypes"`
-	Classifies                []string `json:"classifies"`
-	TradedWith                bool     `json:"tradedWith"`
-	Followed                  bool     `json:"followed"`
-	TransAmount               int      `json:"transAmount"`
-}
 
 func GetBinanceRates(tradeType string, amount int, payTypes ...string) (decimal.Decimal, error) {
 	url := "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
@@ -42,7 +18,7 @@ func GetBinanceRates(tradeType string, amount int, payTypes ...string) (decimal.
 		payTypes = []string{}
 	}
 
-	requestBody := P2PRequest{
+	requestBody := domain.P2PRequest{
 		Fiat:                      "VES",
 		Page:                      1,
 		Rows:                      1,

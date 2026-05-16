@@ -1,6 +1,9 @@
-package main
+package scraper
 
 import (
+	"bcv/internal/modules/telegram"
+	"bcv/internal/platform/database"
+	"bcv/internal/platform/server"
 	"bcv/models"
 	"crypto/tls"
 	"fmt"
@@ -75,14 +78,14 @@ func scrapeBCV() models.ScrapeReport {
 	return FinalDataRaw
 }
 
-func ScrapeLatestRates(app *App) error {
+func ScrapeLatestRates(app *server.App) error {
 	data := scrapeBCV()
-	if err := SaveScrapeReport(app.DB, data); err != nil {
+	if err := database.SaveScrapeReport(app.DB, data); err != nil {
 		return fmt.Errorf("Error to save scrape report: %w", err)
 	}
-	message := BuildMessage(data)
+	message := telegram.BuildMessage(data)
 
-	if err := sendMessage(app.Auth, message); err != nil {
+	if err := telegram.SendMessage(app.Auth, message); err != nil {
 		return fmt.Errorf("Error sending message to telegram: %w ", err)
 	}
 	return nil

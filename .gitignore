@@ -3,3 +3,4 @@ docker/docker-compose.yml
 .env
 __debug_bin.exe
 app.log
+env.ps1

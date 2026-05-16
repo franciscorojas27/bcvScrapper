@@ -1,28 +1,11 @@
-package main
+package database
 
 import (
 	"bcv/models"
-	"fmt"
 
 	"github.com/shopspring/decimal"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
-
-func ConnectDB(conString string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(conString), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database: %v", err)
-	}
-	return db, nil
-}
-
-func InitializeDB(db *gorm.DB) error {
-	if err := db.AutoMigrate(&models.ScrapeReport{}, &models.CurrencyRate{}); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
-	}
-	return nil
-}
 
 func SaveScrapeReport(db *gorm.DB, data models.ScrapeReport) error {
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -78,4 +61,20 @@ func GetLatestRates(db *gorm.DB) (models.ScrapeReport, error) {
 	}
 
 	return report, nil
+}
+
+func GetListOfLatestRates(db *gorm.DB) ([]models.CurrencyRate, error) {
+	var reports []models.ScrapeReport
+	if err := db.Preload("Rates").Order("bcv_date DESC").Limit(15).Find(&reports).Error; err != nil {
+		return nil, err
+	}
+
+	var rates []models.CurrencyRate
+	for _, rpt := range reports {
+		for _, r := range rpt.Rates {
+			rates = append(rates, r)
+		}
+	}
+
+	return rates, nil
 }

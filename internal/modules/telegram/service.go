@@ -1,6 +1,7 @@
-package main
+package telegram
 
 import (
+	"bcv/internal/domain"
 	"bcv/models"
 	"encoding/json"
 	"fmt"
@@ -8,12 +9,7 @@ import (
 	"strings"
 )
 
-type AuthTelegram struct {
-	Token  string `json:"token"`
-	ChatID string `json:"chat_id"`
-}
-
-func sendMessage(auth AuthTelegram, message string) error {
+func SendMessage(auth domain.AuthTelegram, message string) error {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", auth.Token)
 	payload := map[string]string{
 		"chat_id": auth.ChatID,
