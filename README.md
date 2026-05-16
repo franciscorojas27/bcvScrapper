@@ -15,5 +15,5 @@ go run .
 ## Build
 To compile the system and generate an executable:
 ```bash
-go build -o bcvScraper . .
+go build -o bcvScraper .
 ```

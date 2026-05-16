@@ -3,6 +3,7 @@ package main
 import (
 	"bcv/config"
 	"bcv/internal/domain"
+	pricebank "bcv/internal/modules/price_bank"
 	"bcv/internal/platform/database"
 	"bcv/internal/platform/scraper"
 	"bcv/internal/platform/server"
@@ -13,6 +14,13 @@ import (
 func main() {
 	config.Setup()
 	port, conString, tokenTelegram, chatIDTelegram := config.Load()
+
+	data, err := pricebank.FetchNewsTitles()
+	if err != nil {
+		slog.Error("Error fetching news titles", "error", err)
+	} else {
+		slog.Info("Fetched news titles successfully", "count", data)
+	}
 
 	db, err := database.ConnectDB(conString)
 	if err != nil {

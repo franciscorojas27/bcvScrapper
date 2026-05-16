@@ -42,10 +42,3 @@ func GetNews() ([]string, error) {
 
 	return noticias, nil
 }
-
-type WPPost struct {
-	Link  string `json:"link"`
-	Title struct {
-		Rendered string `json:"rendered"`
-	} `json:"title"`
-}
