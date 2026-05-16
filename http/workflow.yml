@@ -10,3 +10,7 @@ requests:
   - name: get-trade
     method: GET
     url: /binance
+  
+  - name: get-rate-list
+    method: GET
+    url: /rate-list

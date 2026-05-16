@@ -63,6 +63,15 @@ func StartServer(app *App) {
 		return c.JSON(tradeSignal)
 	})
 
+	server.Get("/rate-list", func(c fiber.Ctx) error {
+		rates, err := database.GetListOfLatestReports(app.DB)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Error fetching list of latest rates: %v", err)})
+		}
+		slog.Info("Request: /rate-list", "ip:", c.IP())
+		return c.JSON(rates)
+	})
+
 	slog.Info("Starting server", "port", app.Port)
 	server.Listen(":" + app.Port)
 }

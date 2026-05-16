@@ -78,3 +78,12 @@ func GetListOfLatestRates(db *gorm.DB) ([]models.CurrencyRate, error) {
 
 	return rates, nil
 }
+
+func GetListOfLatestReports(db *gorm.DB) ([]models.ScrapeReport, error) {
+	var reports []models.ScrapeReport
+	if err := db.Preload("Rates").Order("bcv_date DESC").Limit(15).Find(&reports).Error; err != nil {
+		return nil, err
+	}
+
+	return reports, nil
+}
