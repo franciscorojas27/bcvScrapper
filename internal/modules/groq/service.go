@@ -120,7 +120,7 @@ func GenerateTradeSignal(llm *openai.LLM, newsTitles []string, rates []models.Cu
 		"1. Está estrictamente prohibido inventar, alucinar o usar números que no estén explícitamente declarados en 'bcv_rates_official' o 'binance_p2p_real'. No uses tasas del pasado ni cifras externas.\n" +
 		"2. Calcula la brecha real restando el USD del BCV del precio 'buy' de Binance P2P.\n" +
 		"3. Redacta el 'rationale' en tercera persona neutral (ej: 'El sistema detecta...', 'Se recomienda...'). Debe ser un análisis técnico, frío y fluido de un solo párrafo sin ideas repetidas. Debe justificar la acción elegida basándose en la brecha calculada y el sentimiento macroeconómico de los titulares.\n" +
-		"4. Coherencia de variables: Si el análisis determina que el spread es desfavorable o la liquidez por ser fin de semana (hoy es sábado) eleva el riesgo, la variable 'action' debe ser \"HOLD\" y el texto debe reflejar esa prudencia.\n\n" +
+		"4. Coherencia de variables: Si el análisis determina que el spread es desfavorable no te dejes llevar por lo que te he dicho y recuerda que los valores que debes de tomar en cuenta de los rates son usd y eur por ves, la variable 'action' debe ser \"HOLD\" y el texto debe reflejar esa prudencia.\n\n" +
 		"ESTRUCTURA DEL OBJETO JSON DE SALIDA:\n" +
 		"{\n" +
 		"  \"action\": \"BUY\",\n" +
