@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"log/slog"
+
 )
 
 var (
@@ -18,6 +19,7 @@ func Setup() {
 	slog.SetDefault(logger)
 }
 func Load() (string, string, string, string) {
+
 	if conString == "" {
 		slog.Warn("the environment variable DB_STRING is not set.")
 		os.Exit(1)
