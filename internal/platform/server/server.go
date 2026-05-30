@@ -6,9 +6,11 @@ import (
 	"bcv/internal/platform/database"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cache"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 )
@@ -106,7 +108,9 @@ func StartServer(app *App) {
 		return c.JSON(tradeSignal)
 	})
 
-	api.Get("/news", func(c fiber.Ctx) error {
+	api.Get("/news", cache.New(cache.Config{
+		Expiration: 4 * time.Hour,
+	}), func(c fiber.Ctx) error {
 		news, err := news.FetchNewsTitles()
 		if err != nil {
 			slog.Error("Error fetching latest news", "error", err)
