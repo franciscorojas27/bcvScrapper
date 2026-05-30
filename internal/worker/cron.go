@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bcv/internal/modules/groq"
 	"bcv/internal/modules/trade"
 	"bcv/internal/platform/database"
 	"bcv/internal/platform/scraper"
