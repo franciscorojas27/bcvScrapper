@@ -34,7 +34,7 @@ func FetchBinanceRates() (*domain.BinanceRate, error) {
 	}
 
 	return &domain.BinanceRate{
-		SellPrice: sellPrice.InexactFloat64(),
-		BuyPrice:  buyPrice.InexactFloat64(),
+		SellPrice: sellPrice,
+		BuyPrice:  buyPrice,
 	}, nil
 }

@@ -1,9 +1,9 @@
 package scraper
 
 import (
+	"bcv/internal/domain"
 	"bcv/internal/modules/telegram"
 	"bcv/internal/platform/database"
-	"bcv/internal/platform/server"
 	"bcv/models"
 	"crypto/tls"
 	"fmt"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/gocolly/colly"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
 
 func scrapeBCV() models.ScrapeReport {
@@ -78,15 +79,20 @@ func scrapeBCV() models.ScrapeReport {
 	return FinalDataRaw
 }
 
-func ScrapeLatestRates(app *server.App) error {
+func ScrapeLatestRates(db *gorm.DB, auth domain.AuthTelegram) error {
 	data := scrapeBCV()
-	if err := database.SaveScrapeReport(app.DB, data); err != nil {
+	saved, err := database.SaveScrapeReport(db, data)
+	if err != nil {
 		return fmt.Errorf("Error to save scrape report: %w", err)
 	}
-	message := telegram.BuildMessage(data)
+	if !saved {
+		return nil
+	}
 
-	if err := telegram.SendMessage(app.Auth, message); err != nil {
+	message := telegram.BuildMessage(data)
+	if err := telegram.SendMessage(auth, message); err != nil {
 		return fmt.Errorf("Error sending message to telegram: %w ", err)
 	}
+
 	return nil
 }

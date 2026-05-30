@@ -76,9 +76,6 @@ func GenerateTradeSignal(llm *openai.LLM, newsTitles []string, rates []models.Cu
     if len(newsTitles) == 0 {
         return models.TradeSignal{}, fmt.Errorf("no news titles available for analysis")
     }
-    if binanceRate.BuyPrice <= 0 || binanceRate.SellPrice <= 0 {
-        return models.TradeSignal{}, fmt.Errorf("invalid Binance rate data")
-    }
 
     numRegex := regexp.MustCompile("(?i)(b\\s*s|usd|\\$|[\\d.,]+%?|millones|mil)")
 

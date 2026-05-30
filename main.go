@@ -14,9 +14,10 @@ import (
 
 func main() {
 	config.Setup()
-	port, conString, tokenTelegram, chatIDTelegram := config.Load()
+	port, tokenTelegram, chatIDTelegram := config.Load()
+	corsConfig := config.LoadCORS()
 
-	db, err := database.ConnectDB(conString)
+	db, err := database.ConnectDB()
 	if err != nil {
 		slog.Error("Error to connect to database", "error", err)
 		return
@@ -36,6 +37,7 @@ func main() {
 		Token:  tokenTelegram,
 		ChatID: chatIDTelegram,
 	}, port, initIa)
+	app.CORS = corsConfig
 
 	err = groq.GetTradeSignal(app)
 	if err != nil {
@@ -44,7 +46,7 @@ func main() {
 		slog.Info("Trade signal generated and saved successfully")
 	}
 
-	err = scraper.ScrapeLatestRates(app)
+	err = scraper.ScrapeLatestRates(app.DB, app.Auth)
 
 	if err != nil {
 		slog.Error("Error during initial scrape", "error", err)

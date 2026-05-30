@@ -12,6 +12,8 @@ type App struct {
 	Auth domain.AuthTelegram
 	Port string
 	IA   *openai.LLM
+	Hub  *domain.Hub
+	CORS domain.CORSConfig
 }
 
 func NewApp(db *gorm.DB, auth domain.AuthTelegram, port string, ia *openai.LLM) *App {

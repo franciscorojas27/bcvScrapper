@@ -1,8 +1,10 @@
 package domain
 
+import "github.com/shopspring/decimal"
+
 type BinanceRate struct {
-	SellPrice float64 `json:"sellPrice"`
-	BuyPrice  float64 `json:"buyPrice"`
+	SellPrice decimal.Decimal `json:"sellPrice"`
+	BuyPrice  decimal.Decimal `json:"buyPrice"`
 }
 
 type P2PRequest struct {

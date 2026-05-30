@@ -16,7 +16,7 @@ func (j JSONB) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
-func (j *JSONB) Scan(value interface{}) error {
+func (j *JSONB) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return errors.New("invalid scan type for JSONB")
