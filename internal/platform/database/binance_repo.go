@@ -59,11 +59,11 @@ type BinanceRateList struct {
 func GetlistOfLatestBinanceRates(db *gorm.DB) (BinanceRateList, error) {
 	var buyRates []models.BinanceRate
 	var sellRates []models.BinanceRate
-	err := db.Where("type_value = ?", "buy").Order("id desc").Limit(900).Find(&buyRates).Error
+	err := db.Where("type_value = ?", "buy").Order("id desc").Limit(500).Find(&buyRates).Error
 	if err != nil {
 		return BinanceRateList{}, err
 	}
-	err = db.Where("type_value = ?", "sell").Order("id desc").Limit(900).Find(&sellRates).Error
+	err = db.Where("type_value = ?", "sell").Order("id desc").Limit(500).Find(&sellRates).Error
 	if err != nil {
 		return BinanceRateList{}, err
 	}
