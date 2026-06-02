@@ -3,7 +3,6 @@ package main
 import (
 	"bcv/internal/config"
 	"bcv/internal/domain"
-	"bcv/internal/modules/groq"
 	"bcv/internal/platform/database"
 	"bcv/internal/platform/providers/ia"
 	"bcv/internal/platform/scraper"
@@ -38,13 +37,6 @@ func main() {
 		ChatID: chatIDTelegram,
 	}, port, initIa)
 	app.CORS = corsConfig
-
-	err = groq.GetTradeSignal(app)
-	if err != nil {
-		slog.Error("Error getting trade signal", "error", err)
-	} else {
-		slog.Info("Trade signal generated and saved successfully")
-	}
 
 	err = scraper.ScrapeLatestRates(app.DB, app.Auth)
 
