@@ -22,13 +22,33 @@ func scrapeBCV() models.ScrapeReport {
 		BcvDate: time.Time{},
 	}
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
+	)
+
+	c.SetRequestTimeout(15 * time.Second)
 
 	c.WithTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         "www.bcv.org.ve",
+			MinVersion: tls.VersionTLS12,
 		},
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+		r.Headers.Set("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
+		r.Headers.Set("Cache-Control", "no-cache")
+		r.Headers.Set("Pragma", "no-cache")
+		r.Headers.Set("Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`)
+		r.Headers.Set("Sec-Ch-Ua-Mobile", "?0")
+		r.Headers.Set("Sec-Ch-Ua-Platform", `"Windows"`)
+		r.Headers.Set("Sec-Fetch-Dest", "document")
+		r.Headers.Set("Sec-Fetch-Mode", "navigate")
+		r.Headers.Set("Sec-Fetch-Site", "none")
+		r.Headers.Set("Sec-Fetch-User", "?1")
+		r.Headers.Set("Upgrade-Insecure-Requests", "1")
 	})
 
 	c.OnHTML(".pull-right.dinpro.center .date-display-single", func(e *colly.HTMLElement) {
