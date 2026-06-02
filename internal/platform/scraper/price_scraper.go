@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -36,8 +37,8 @@ func scrapeBCV() models.ScrapeReport {
 			MinVersion:         tls.VersionTLS12,
 		},
 	}
-
-	proxyURL, err := url.Parse("http://194.180.188.100:8080")
+	proxyIP := os.Getenv("PROXY_IP")
+	proxyURL, err := url.Parse("http://" + proxyIP + ":8080")
 	if err == nil {
 		transport.Proxy = http.ProxyURL(proxyURL)
 	}
