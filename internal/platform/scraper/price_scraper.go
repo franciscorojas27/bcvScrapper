@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -28,13 +29,20 @@ func scrapeBCV() models.ScrapeReport {
 
 	c.SetRequestTimeout(15 * time.Second)
 
-	c.WithTransport(&http.Transport{
+	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         "www.bcv.org.ve",
-			MinVersion: tls.VersionTLS12,
+			MinVersion:         tls.VersionTLS12,
 		},
-	})
+	}
+
+	proxyURL, err := url.Parse("http://194.180.188.100:8080")
+	if err == nil {
+		transport.Proxy = http.ProxyURL(proxyURL)
+	}
+
+	c.WithTransport(transport)
 
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
