@@ -2,6 +2,7 @@ package database
 
 import (
 	"bcv/models"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -77,8 +78,10 @@ func SaveScrapeReport(db *gorm.DB, data models.ScrapeReport) (bool, error) {
 func GetLatestRates(db *gorm.DB) (models.ScrapeReport, error) {
 	var report models.ScrapeReport
 
+	now := time.Now().Local()
 	err := db.Preload("Rates").
 		Preload("Rates.Gap.BinanceRate").
+		Where("bcv_date <= ?", now).
 		Order("bcv_date DESC").
 		First(&report).Error
 
