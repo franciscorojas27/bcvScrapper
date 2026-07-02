@@ -8,6 +8,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -27,6 +29,8 @@ func scrapeBCV() models.ScrapeReport {
 	)
 
 	c.SetRequestTimeout(15 * time.Second)
+	useProxy := os.Getenv("USE_PROXY")
+	httpProxy := os.Getenv("HTTP_PROXY")
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -34,6 +38,15 @@ func scrapeBCV() models.ScrapeReport {
 			ServerName:         "www.bcv.org.ve",
 			MinVersion:         tls.VersionTLS12,
 		},
+	}
+
+	if useProxy == "true" && httpProxy != "" {
+		proxyURL, err := url.Parse(httpProxy)
+		if err != nil {
+			fmt.Printf("❌ Error parsing proxy URL: %v\n", err)
+		} else {
+			transport.Proxy = http.ProxyURL(proxyURL)
+		}
 	}
 
 	c.WithTransport(transport)
