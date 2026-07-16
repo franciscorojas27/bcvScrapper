@@ -35,8 +35,7 @@ func scrapeBCV() models.ScrapeReport {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
-			ServerName:         "www.bcv.org.ve",
-			MinVersion:         tls.VersionTLS12,
+			ServerName:         "bcv.org.ve",
 		},
 	}
 
