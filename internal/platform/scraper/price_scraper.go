@@ -26,7 +26,7 @@ func scrapeBCV() models.ScrapeReport {
 
 	c := colly.NewCollector(
 		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
-	)
+	) 
 
 	c.SetRequestTimeout(15 * time.Second)
 	useProxy := os.Getenv("USE_PROXY")
