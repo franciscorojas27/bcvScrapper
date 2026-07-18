@@ -36,7 +36,7 @@ func StartCron(app *server.App) {
 		}
 	})
 
-	c.AddFunc("0 0 16-22 * * *", func() {
+	c.AddFunc("0 0 0 16-22 * * *", func() {
 		slog.Info("Starting scheduled scrape")
 		if err := scraper.ScrapeLatestRates(app.DB, app.Auth); err != nil {
 			slog.Error("Error during scheduled scrape", "error", err)
