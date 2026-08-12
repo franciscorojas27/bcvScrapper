@@ -14,7 +14,7 @@ import (
 func StartCron(app *server.App) {
 	c := cron.New(cron.WithSeconds())
 
-	c.AddFunc("*/15 * * * * *", func() {
+	_, err := c.AddFunc("*/15 * * * * *", func() {
 		rates, err := trade.FetchBinanceRates()
 		if err != nil {
 			slog.Error("Cron Error: Failed to fetch rates from Binance API", "error", err)
@@ -35,8 +35,11 @@ func StartCron(app *server.App) {
 			app.Hub.Broadcast <- dbRates
 		}
 	})
+	if err != nil {
+		slog.Error("Error adding Binance cron job", "error", err)
+	}
 
-	c.AddFunc("0 0 0 16-22 * * *", func() {
+	_, err = c.AddFunc("0 0 16-22 * * *", func() {
 		slog.Info("Starting scheduled scrape")
 		if err := scraper.ScrapeLatestRates(app.DB, app.Auth); err != nil {
 			slog.Error("Error during scheduled scrape", "error", err)
@@ -44,6 +47,9 @@ func StartCron(app *server.App) {
 			slog.Info("Scheduled scrape completed successfully")
 		}
 	})
+	if err != nil {
+		slog.Error("Error adding scraper cron job", "error", err)
+	}
 
 	c.Start()
 }
