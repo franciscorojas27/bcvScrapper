@@ -39,7 +39,7 @@ func StartCron(app *server.App) {
 		slog.Error("Error adding Binance cron job", "error", err)
 	}
 
-	_, err = c.AddFunc("0 0 16-22 * * *", func() {
+	_, err = c.AddFunc("0 */20 16-22 * * *", func() {
 		slog.Info("Starting scheduled scrape")
 		if err := scraper.ScrapeLatestRates(app.DB, app.Auth); err != nil {
 			slog.Error("Error during scheduled scrape", "error", err)
