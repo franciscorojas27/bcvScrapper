@@ -18,13 +18,13 @@ func FetchBinanceRates() (*domain.BinanceRate, error) {
 
 	g.Go(func() error {
 		var err error
-		buyPrice, err = binance.GetBinanceRates("BUY", 50000)
+		buyPrice, err = binance.GetBinanceRates("BUY", 85000)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		sellPrice, err = binance.GetBinanceRates("SELL", 50000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
+		sellPrice, err = binance.GetBinanceRates("SELL", 85000, "Banesco", "PagoMovil", "BANK", "BancoDeVenezuela", "Mercantil", "Bancamiga", "Provincial", "BNCBancoNacional", "BBVABank", "Bancaribe", "Banplus", "SpecificBank", "BancoPlaza", "BancoVeneCredit", "BancoDelTesoro", "BancoActivo", "BFC", "BDDT", "N58")
 		return err
 	})
 
