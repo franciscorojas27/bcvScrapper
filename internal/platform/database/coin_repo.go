@@ -110,7 +110,7 @@ func GetListOfLatestRates(db *gorm.DB) ([]models.CurrencyRate, error) {
 
 func GetListOfLatestReports(db *gorm.DB) ([]models.ScrapeReport, error) {
 	var reports []models.ScrapeReport
-	if err := db.Preload("Rates").Preload("Rates.Gap.BinanceRate").Order("bcv_date DESC").Limit(15).Find(&reports).Error; err != nil {
+	if err := db.Preload("Rates").Preload("Rates.Gap.BinanceRate").Order("bcv_date DESC").Find(&reports).Error; err != nil {
 		return nil, err
 	}
 
